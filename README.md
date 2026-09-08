@@ -88,6 +88,46 @@ Testes:
 .venv/Scripts/python.exe -m pytest tests -q
 ```
 
+Os testes marcados com `integracao` exigem os containers no ar e sao pulados
+automaticamente quando o Trino nao responde.
+
+## Camada silver do SIH
+
+A DAG `build_silver_sih` le a bronze, tipa os campos e deduplica por numero de
+AIH, gravando em `iceberg.silver.sih_aih`.
+
+```bash
+docker compose exec airflow-scheduler   airflow dags test build_silver_sih --conf '{"competencia":"202401"}'
+```
+
+Dos 113 campos de origem, 19 viram `decimal(12,2)`, 15 viram `integer`, 3 viram
+`date` e `morte` vira `boolean`. Os outros 75 seguem `varchar`, incluindo os 29
+que tem valores comecando em zero, como `proc_rea` e `cep`, onde o zero a
+esquerda e informacao.
+
+A tabela e particionada por `month(dt_inter)` e nao por competencia. Competencia
+e o mes de faturamento, e a fatura de janeiro traz internacoes de meses
+anteriores, entao analise de ocupacao filtra por data de internacao.
+
+A carga usa `MERGE INTO` por `n_aih`, entao rodar a mesma competencia duas vezes
+atualiza as linhas em vez de duplicar, e carregar uma competencia antiga depois
+de uma recente nao sobrescreve a versao mais nova.
+
+## Memória
+
+A imagem do Trino sobe com `MaxRAMPercentage=80`. Sem teto no container a JVM
+enxerga a VM inteira, mira um heap maior que a memória real e o kernel da VM
+mata o processo com exit 137. Por isso o serviço tem `mem_limit: 3g` no compose.
+
+Em uso normal o Trino fica perto de 2 GB, então limites menores que isso o
+derrubam durante cargas maiores. Se outros stacks Docker estiverem rodando na
+mesma máquina, vale pará-los antes de trabalhar aqui:
+
+```bash
+docker compose ls -a
+docker stats --no-stream
+```
+
 ## Fluxo de trabalho
 
 Uma branch por entrega, commits pequenos e descritivos, merge via pull request.

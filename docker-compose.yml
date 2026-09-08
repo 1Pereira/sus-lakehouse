@@ -79,6 +79,11 @@ services:
       - "8081:8080"
     volumes:
       - ./trino/catalog:/etc/trino/catalog:ro
+    # A imagem sobe com MaxRAMPercentage=80. Sem teto no container a JVM enxerga
+    # a VM inteira e mira um heap maior que a memoria disponivel, e o kernel da
+    # VM mata o processo. Com o limite a JVM le o cgroup e se dimensiona.
+    mem_limit: 3g
+    restart: unless-stopped
 
   postgres-oltp:
     image: postgres:16

@@ -1,6 +1,7 @@
 """Configuracao de ambiente da ingestao do SIH."""
 
 import os
+from pathlib import Path
 
 FTP_HOST = "ftp.datasus.gov.br"
 FTP_DIR = "/dissemin/publicos/SIHSUS/200801_/Dados"
@@ -13,7 +14,8 @@ TABELA_BRONZE = "sih_aih"
 
 COMPETENCIA_MINIMA = "200801"
 
-DIR_SQL = os.environ.get("SUS_SQL_DIR", "/opt/airflow/sql")
+# dags/ e sql/ sao irmas tanto no repositorio quanto em /opt/airflow no container
+DIR_SQL = os.environ.get("SUS_SQL_DIR", str(Path(__file__).resolve().parents[2] / "sql"))
 
 ENCODING_DBF = "iso-8859-1"
 

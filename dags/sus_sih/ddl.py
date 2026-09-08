@@ -1,4 +1,4 @@
-"""Aplicacao do DDL versionado da camada bronze via Trino."""
+"""Aplicacao do DDL versionado das camadas via Trino."""
 
 import logging
 import os
@@ -10,6 +10,7 @@ from sus_sih import config
 logger = logging.getLogger(__name__)
 
 ARQUIVOS_BRONZE = ("bronze/sih_aih_schema.sql", "bronze/sih_aih.sql")
+ARQUIVOS_SILVER = ("silver/sih_aih_schema.sql", "silver/sih_aih.sql")
 
 
 def conectar():
@@ -20,16 +21,29 @@ def conectar():
     )
 
 
-def executar_arquivo(cursor, caminho: str) -> None:
-    sentenca = open(caminho, encoding="utf-8").read().strip().rstrip(";")
-    cursor.execute(sentenca)
-    cursor.fetchall()
-    logger.info("aplicado %s", caminho)
+def ler_sql(relativo: str) -> str:
+    caminho = os.path.join(config.DIR_SQL, relativo)
+    return open(caminho, encoding="utf-8").read().strip().rstrip(";")
+
+
+def executar(cursor, relativo: str, params: tuple | None = None):
+    sql = ler_sql(relativo)
+    if params:
+        cursor.execute(sql, params=params)
+    else:
+        cursor.execute(sql)
+    resultado = cursor.fetchall()
+    logger.info("aplicado %s", relativo)
+    return resultado
+
+
+def garantir(arquivos: tuple[str, ...]) -> None:
+    with conectar() as conexao:
+        cursor = conexao.cursor()
+        for relativo in arquivos:
+            executar(cursor, relativo)
 
 
 def garantir_tabela() -> None:
-    """Cria namespace e tabela bronze se ainda nao existirem."""
-    with conectar() as conexao:
-        cursor = conexao.cursor()
-        for relativo in ARQUIVOS_BRONZE:
-            executar_arquivo(cursor, os.path.join(config.DIR_SQL, relativo))
+    """Namespace e tabela da bronze."""
+    garantir(ARQUIVOS_BRONZE)
