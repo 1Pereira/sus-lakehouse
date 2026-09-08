@@ -13,6 +13,8 @@ TABELA_BRONZE = "sih_aih"
 
 COMPETENCIA_MINIMA = "200801"
 
+DIR_SQL = os.environ.get("SUS_SQL_DIR", "/opt/airflow/sql")
+
 ENCODING_DBF = "iso-8859-1"
 
 UFS = frozenset(
