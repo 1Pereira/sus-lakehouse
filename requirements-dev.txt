@@ -5,3 +5,7 @@ pytest==8.4.2
 trino==0.336.0
 pandas==2.3.3
 python-dotenv==1.1.1
+pyreaddbc==2.0.4
+pyiceberg[pyarrow]==0.10.0
+sqlalchemy==2.0.44
+pyarrow==24.0.0
