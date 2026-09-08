@@ -49,6 +49,40 @@ def escrever_dbf(caminho: Path, campos: list[tuple[str, int]], registros: list[l
     return caminho
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "integracao: exige os containers no ar, pulado quando o Trino nao responde"
+    )
+
+
+@pytest.fixture(scope="session")
+def trino_cursor():
+    """Cursor do Trino no host, ou skip quando os containers nao estao no ar."""
+    import trino
+
+    os.environ.setdefault("TRINO_HOST", "localhost")
+    os.environ.setdefault("TRINO_PORT", "8081")
+    try:
+        cursor = trino.dbapi.connect(host="localhost", port=8081, user="pytest").cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchall()
+    except Exception as erro:
+        pytest.skip(f"Trino indisponivel: {erro}")
+    return cursor
+
+
+@pytest.fixture(scope="session")
+def competencia_carregada(trino_cursor):
+    """Competencia que ja existe na bronze, para exercitar a carga de verdade."""
+    trino_cursor.execute(
+        "SELECT min(\"_competencia\") FROM iceberg.bronze.sih_aih"
+    )
+    competencia = trino_cursor.fetchone()[0]
+    if not competencia:
+        pytest.skip("bronze vazia, rode a dag ingest_sih_bronze antes")
+    return competencia
+
+
 @pytest.fixture
 def dbf_sintetico(tmp_path):
     return escrever_dbf(
