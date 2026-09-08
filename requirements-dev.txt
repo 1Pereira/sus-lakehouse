@@ -1,0 +1,7 @@
+cryptography==46.0.3
+ruff==0.14.0
+sqlfluff==3.4.2
+pytest==8.4.2
+trino==0.336.0
+pandas==2.3.3
+python-dotenv==1.1.1

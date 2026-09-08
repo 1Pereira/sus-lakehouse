@@ -1,0 +1,6 @@
+apache-airflow-providers-trino==6.4.0
+apache-airflow-providers-postgres==6.3.0
+pyiceberg[s3fs,pyarrow]==0.10.0
+trino==0.336.0
+pandas==2.3.3
+requests==2.32.5
