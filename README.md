@@ -113,6 +113,21 @@ A carga usa `MERGE INTO` por `n_aih`, entao rodar a mesma competencia duas vezes
 atualiza as linhas em vez de duplicar, e carregar uma competencia antiga depois
 de uma recente nao sobrescreve a versao mais nova.
 
+## Memória
+
+A imagem do Trino sobe com `MaxRAMPercentage=80`. Sem teto no container a JVM
+enxerga a VM inteira, mira um heap maior que a memória real e o kernel da VM
+mata o processo com exit 137. Por isso o serviço tem `mem_limit: 3g` no compose.
+
+Em uso normal o Trino fica perto de 2 GB, então limites menores que isso o
+derrubam durante cargas maiores. Se outros stacks Docker estiverem rodando na
+mesma máquina, vale pará-los antes de trabalhar aqui:
+
+```bash
+docker compose ls -a
+docker stats --no-stream
+```
+
 ## Fluxo de trabalho
 
 Uma branch por entrega, commits pequenos e descritivos, merge via pull request.
