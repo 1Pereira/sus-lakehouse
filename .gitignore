@@ -7,3 +7,4 @@ __pycache__/
 data/
 logs/
 simple_auth_manager_passwords.json.generated
+tests/fixtures/

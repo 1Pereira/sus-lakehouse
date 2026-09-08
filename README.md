@@ -21,10 +21,14 @@ Lakehouse de internações hospitalares do SUS com arquitetura de medalhão, orq
 Crie o ambiente virtual e instale as dependências de desenvolvimento:
 
 ```bash
-python -m venv .venv
+py -3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 ```
+
+O Python precisa ser 3.13, mesma versao da imagem do Airflow. O `pyreaddbc`,
+que descomprime os arquivos `.dbc` do DATASUS, publica wheel ate cp313, e em
+3.14 o pip cai para compilacao de fonte.
 
 No Windows o comando de ativação é `.venv\Scripts\activate`.
 
@@ -44,7 +48,7 @@ make up
 
 | Serviço | URL |
 |---|---|
-| Airflow | http://localhost:8080 |
+| Airflow | http://localhost:8082 |
 | Trino | http://localhost:8081 |
 | MinIO Console | http://localhost:9001 |
 | Postgres OLTP | localhost:5433 |
@@ -60,6 +64,28 @@ docker compose exec airflow-apiserver cat simple_auth_manager_passwords.json.gen
 ```bash
 docker compose exec trino trino --execute "SHOW CATALOGS"
 docker compose exec trino trino --execute "SELECT count(*) FROM postgresql.public.agendamento"
+```
+
+## Ingestão bronze do SIH
+
+A DAG `ingest_sih_bronze` baixa a AIH reduzida do DATASUS por UF e competência,
+grava o arquivo bruto no bucket `landing` e carrega `iceberg.bronze.sih_aih`.
+
+Dispare pela interface do Airflow preenchendo os parâmetros `uf` e
+`competencia`, ou pela linha de comando:
+
+```bash
+docker compose exec airflow-scheduler   airflow dags test ingest_sih_bronze   --conf '{"uf":"AC","competencia":"202401"}'
+```
+
+Rodar a mesma UF e competência de novo substitui a fatia correspondente em vez
+de duplicar linhas. O acesso ao DATASUS é por FTP, já que as portas 80 e 443 de
+`ftp.datasus.gov.br` não respondem de dentro da rede do compose.
+
+Testes:
+
+```bash
+.venv/Scripts/python.exe -m pytest tests -q
 ```
 
 ## Fluxo de trabalho
